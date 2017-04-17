@@ -50,7 +50,7 @@ bool DCE::runOnFunction(Function &F) {
             Instruction *Def = dyn_cast<Instruction>(U.get());
 
             // Mark and keep work on the operand's define.
-            if (Marked.insert(Def).second) {
+            if (Def && Marked.insert(Def).second) {
                 WorkList.push(Def);
             }
         }
