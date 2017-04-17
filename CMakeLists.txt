@@ -13,3 +13,4 @@ add_definitions(${LLVM_DEFINITIONS})
 set(CMAKE_CXX_FLAGS "-std=c++11 -fno-rtti ${CMAKE_CXX_FLAGS}")
 
 add_subdirectory(Transform)
+add_subdirectory(Tests)
