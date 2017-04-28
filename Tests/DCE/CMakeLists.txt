@@ -1,5 +1,5 @@
 set(clang clang)
-set(opt "${LLVM_TOOLS_BINARY_DIR}/opt;-load;$<TARGET_FILE:MyDCE>")
+set(opt "${LLVM_TOOLS_BINARY_DIR}/opt;-load;$<TARGET_FILE:MyPass>")
 
 add_custom_target(DCE-test1
     COMMAND
@@ -8,4 +8,4 @@ add_custom_target(DCE-test1
         vimdiff test1.ll test1.opt.ll
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES test1.c)
-add_dependencies(DCE-test1 MyDCE)
+add_dependencies(DCE-test1 MyPass)
