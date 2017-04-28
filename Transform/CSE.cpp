@@ -30,9 +30,11 @@ bool CSE::runOnBasicBlock(BasicBlock &BB) {
 
     bool changed = false;
     for (Instruction &Instr: BB) {
-        // Currently cannot handle loads after stores,
-        // so do not eliminate common loads.
-        if (!isSafeToSpeculativelyExecute(&Instr) || Instr.mayReadFromMemory())
+        if (Instr.mayWriteToMemory()) {
+            ExprHash.clear();
+        }
+
+        if (!isSafeToSpeculativelyExecute(&Instr))
             continue;
 
         // Get opcode and operands of this instruction.
