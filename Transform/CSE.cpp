@@ -1,9 +1,9 @@
-#include "llvm/ADT/DenseSet.h"
+#include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/Pass.h"
-#include <queue>
+#include <map>
 using namespace llvm;
 
 namespace {
@@ -18,4 +18,39 @@ namespace {
 }
 
 char CSE::ID = 0;
-static RegisterPass<CSE> X("my-cse", "cyliang's common subexpression elimination", false, false);
+static RegisterPass<CSE> X("my-cse", "cyliang's local common subexpression elimination", false, false);
+
+bool CSE::runOnBasicBlock(BasicBlock &BB) {
+    // <NumOp, Op0, Op1, Op2, Op3, Op4> -> <Expr Value>
+    std::map<std::tuple<unsigned, Value *, Value *, Value *, Value *, Value *>, Value *> ExprHash;
+
+    auto OpOrNull = [](Instruction &Instr, unsigned OpIndex) -> Value * {
+        return OpIndex < Instr.getNumOperands() ? Instr.getOperand(OpIndex) : nullptr;
+    };
+
+    bool changed = false;
+    for (Instruction &Instr: BB) {
+        // Currently cannot handle loads after stores,
+        // so do not eliminate common loads.
+        if (!isSafeToSpeculativelyExecute(&Instr) || Instr.mayReadFromMemory())
+            continue;
+
+        // Get opcode and operands of this instruction.
+        auto Op = std::make_tuple(Instr.getOpcode(),
+            OpOrNull(Instr, 0),
+            OpOrNull(Instr, 1),
+            OpOrNull(Instr, 2),
+            OpOrNull(Instr, 3),
+            OpOrNull(Instr, 4)
+        );
+
+        // Find if same expression already exists.
+        auto Result = ExprHash.insert(std::make_pair(Op, &Instr));
+        if (!Result.second) {
+            Instr.replaceAllUsesWith(Result.first->second);
+            changed = true;
+        }
+    }
+
+    return changed;
+}

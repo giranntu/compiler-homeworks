@@ -13,3 +13,4 @@ macro(test_pass TARGET_NAME PASS_LIB PASS SOURCE)
 endmacro(test_pass)
 
 add_subdirectory(DCE)
+add_subdirectory(CSE)

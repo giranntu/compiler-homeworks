@@ -1,0 +1,4 @@
+test_pass(CSE-test-noeffect1 MyPass -my-cse noeffect1)
+test_pass(CSE-test-eli-loads1 MyPass -my-cse eli-loads1)
+test_pass(CSE-test-eli-adds1 MyPass -my-cse eli-adds1)
+test_pass(CSE-test-eli-adds2 MyPass -my-cse eli-adds2)
