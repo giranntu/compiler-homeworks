@@ -14,6 +14,22 @@ namespace {
 
         bool runOnBasicBlock(BasicBlock &) override;
 
+    private:
+        bool isReusableExpr(Instruction &Inst) {
+            return
+                isa<BinaryOperator>(Inst) ||
+                isa<CmpInst>(Inst) ||
+                isa<ExtractElementInst>(Inst) ||
+                isa<GetElementPtrInst>(Inst) ||
+                isa<InsertElementInst>(Inst) ||
+                isa<InsertValueInst>(Inst) ||
+                isa<PHINode>(Inst) ||
+                isa<SelectInst>(Inst) ||
+                isa<ShuffleVectorInst>(Inst) ||
+                isa<CastInst>(Inst) ||
+                isa<ExtractValueInst>(Inst) ||
+                isa<LoadInst>(Inst);
+        }
     };
 }
 
@@ -34,8 +50,9 @@ bool CSE::runOnBasicBlock(BasicBlock &BB) {
             ExprHash.clear();
         }
 
-        if (!isSafeToSpeculativelyExecute(&Instr))
+        if (!isReusableExpr(Instr)) {
             continue;
+        }
 
         // Get opcode and operands of this instruction.
         auto Op = std::make_tuple(Instr.getOpcode(),
