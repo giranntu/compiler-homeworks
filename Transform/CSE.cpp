@@ -1,3 +1,4 @@
+#include "llvm/Analysis/BasicAliasAnalysis.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Function.h"
@@ -13,6 +14,10 @@ namespace {
         CSE(): BasicBlockPass(ID) {}
 
         bool runOnBasicBlock(BasicBlock &) override;
+
+        void getAnalysisUsage(AnalysisUsage &AU) const override {
+            AU.addRequired<BasicAAWrapperPass>();
+        }
 
     private:
         bool isReusableExpr(Instruction &Inst) {
@@ -37,6 +42,7 @@ char CSE::ID = 0;
 static RegisterPass<CSE> X("my-cse", "cyliang's local common subexpression elimination", false, false);
 
 bool CSE::runOnBasicBlock(BasicBlock &BB) {
+    BasicAAResult &AA = getAnalysis<BasicAAWrapperPass>().getResult();
     // <NumOp, Op0, Op1, Op2, Op3, Op4> -> <Expr Value>
     std::map<std::tuple<unsigned, Value *, Value *, Value *, Value *, Value *>, Value *> ExprHash;
 
@@ -46,7 +52,22 @@ bool CSE::runOnBasicBlock(BasicBlock &BB) {
 
     bool changed = false;
     for (Instruction &Instr: BB) {
-        if (Instr.mayWriteToMemory()) {
+        if (StoreInst *StInst = dyn_cast<StoreInst>(&Instr)) {
+            for (auto It = ExprHash.begin(), ItNow = It, ItEnd = ExprHash.end(); It != ItEnd; ItNow = It) {
+                ++It;
+                Instruction *ExprInst = dyn_cast<Instruction>(ItNow->second);
+
+                if (ExprInst && ExprInst->mayReadFromMemory()) {
+                    if (LoadInst *LdInst = dyn_cast<LoadInst>(ExprInst)) {
+                        if (AA.alias(MemoryLocation::get(LdInst), MemoryLocation::get(StInst)) == AliasResult::NoAlias) {
+                            continue;
+                        }
+                    }
+
+                    ExprHash.erase(ItNow);
+                }
+            }
+        } else if (Instr.mayWriteToMemory()) {
             ExprHash.clear();
         }
 
