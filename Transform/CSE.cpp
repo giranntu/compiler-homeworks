@@ -43,6 +43,7 @@ static RegisterPass<CSE> X("my-cse", "cyliang's local common subexpression elimi
 
 bool CSE::runOnBasicBlock(BasicBlock &BB) {
     BasicAAResult &AA = getAnalysis<BasicAAWrapperPass>().getResult();
+
     // <NumOp, Op0, Op1, Op2, Op3, Op4> -> <Expr Value>
     std::map<std::tuple<unsigned, Value *, Value *, Value *, Value *, Value *>, Value *> ExprHash;
 
@@ -52,25 +53,33 @@ bool CSE::runOnBasicBlock(BasicBlock &BB) {
 
     bool changed = false;
     for (Instruction &Instr: BB) {
-        if (StoreInst *StInst = dyn_cast<StoreInst>(&Instr)) {
+        // Instructions writing memory may invalidate previous results from memory reading
+        // instructions, so we need to check if each memory reading result in ExprHash still
+        // valid.
+        if (Instr.mayWriteToMemory()) {
             for (auto It = ExprHash.begin(), ItNow = It, ItEnd = ExprHash.end(); It != ItEnd; ItNow = It) {
                 ++It;
                 Instruction *ExprInst = dyn_cast<Instruction>(ItNow->second);
 
                 if (ExprInst && ExprInst->mayReadFromMemory()) {
-                    if (LoadInst *LdInst = dyn_cast<LoadInst>(ExprInst)) {
-                        if (AA.alias(MemoryLocation::get(LdInst), MemoryLocation::get(StInst)) == AliasResult::NoAlias) {
-                            continue;
+                    if (StoreInst *StInst = dyn_cast<StoreInst>(&Instr)) {
+                        if (LoadInst *LdInst = dyn_cast<LoadInst>(ExprInst)) {
+                            if (AA.alias(MemoryLocation::get(LdInst), MemoryLocation::get(StInst)) == AliasResult::NoAlias) {
+                                // If it is known the load instruction in ExprHash does not alias
+                                // this store instruction, we can keep the load in ExprHash.
+                                continue;
+                            }
                         }
                     }
 
+                    // If we cannot analyze the memory this instruction writes to,
+                    // just flush the memory reading expressions in ExprHash.
                     ExprHash.erase(ItNow);
                 }
             }
-        } else if (Instr.mayWriteToMemory()) {
-            ExprHash.clear();
         }
 
+        // Skip if this instruction cannot be reused, such as `Alloca`.
         if (!isReusableExpr(Instr)) {
             continue;
         }
