@@ -7,7 +7,6 @@ int main() {
     int c;
     int d;
 
-    // Dead Code
     c = a + b + 2;
     d = a + b + 5 + 7;
 

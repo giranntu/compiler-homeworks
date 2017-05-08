@@ -5,10 +5,10 @@ int main() {
     int a = rand();
     int b = rand();
     int c;
+    int d;
 
-    c = a + 1;
-    c = b + 2;
-    c = a + b;
+    c = a + b + 2;
+    d = 3 + a + b + 2;
 
     printf("Hello World!\n");
 }

@@ -2,13 +2,11 @@
 #include <stdlib.h>
 
 int main() {
-    int a = rand();
-    int b = rand();
+    int a[10];
+    int b[10];
     int c;
 
-    c = a + 1;
-    c = b + 2;
-    c = a + b;
+    c = (a[5] + b[5]) + 2 + (((char *)a)[5] + ((char *)b)[5]);
 
     printf("Hello World!\n");
 }
