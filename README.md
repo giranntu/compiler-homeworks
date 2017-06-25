@@ -1,4 +1,4 @@
-Dead Code Elimination - Using mark & sweep algorithm
+Dead Code Elimination & Common Subexpression Elimination
 =====================
 
 R05944012 Chih-Yung Liang (梁智湧)
@@ -28,4 +28,17 @@ Assume that Clang is already installed on the system.
 
 ```bash
 $ make DCE-test1
+$ make CSE-test-noeffect1
+$ make CSE-test-noeffect2
+$ make CSE-test-noeffect3
+$ make CSE-test-eli-loads1
+$ make CSE-test-eli-loads2
+$ make CSE-test-eli-loads3
+$ make CSE-test-eli-adds1
+$ make CSE-test-eli-adds2
+$ make CSE-test-eli-adds3
+$ make CSE-test-eli-ptr1
+$ make CSE-test-eli-ptr2
+$ make CSE-test-eli-ptr3
+$ make CSE-test-eli-ptr4
 ```
